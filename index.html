@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sayın Mahmut Ünal</title>
+  <!-- Google Fonts: Zarf önü el yazısı, mektup içi el yazısı hitap ve klasik mektup gövde yazı tipi -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* =========================================================================
+       RENK DEĞİŞKENLERİ VE GENEL SIFIRLAMA
+       ========================================================================= */
+    :root {
+      --bg-dark: #1f1510;
+      --bg-mid: #37261d;
+      --bg-light: #4d3528;
+
+      --env-cream: #f4ead5;
+      --env-warm: #e6d6b8;
+      --env-shadow: #cbb58e;
+      --env-border: #b4996d;
+
+      --paper-light: #fdfaf3;
+      --paper-warm: #f2e9d6;
+      --ink-primary: #231a14;
+      --ink-deep: #120d0a;
+      --wax-red: #8e2722;
+      --wax-dark: #5d1512;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      width: 100%;
+      font-family: 'Lora', Georgia, serif;
+      color: var(--ink-primary);
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255, 226, 182, 0.14) 0%, rgba(255, 226, 182, 0) 55%),
+        radial-gradient(circle at 50% 85%, rgba(12, 7, 4, 0.65) 0%, transparent 70%),
+        linear-gradient(155deg, var(--bg-light) 0%, var(--bg-mid) 52%, var(--bg-dark) 100%);
+    }
+
+    /* Masa yüzeyinde ince doku katmanı */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.2;
+      background-image:
+        radial-gradient(rgba(255, 244, 224, 0.09) 1px, transparent 0),
+        radial-gradient(rgba(0, 0, 0, 0.16) 1px, transparent 0);
+      background-size: 26px 26px;
+      background-position: 0 0, 13px 13px;
+      z-index: 0;
+    }
+
+    /* =========================================================================
+       ANA SAHNE YERLEŞİMİ
+       ========================================================================= */
+    .stage {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(18px, 4vw, 38px) clamp(14px, 4vw, 24px);
+      gap: 20px;
+    }
+
+    .hint {
+      text-align: center;
+      color: rgba(252, 241, 222, 0.9);
+      font-size: clamp(0.88rem, 2.2vw, 1rem);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      user-select: none;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    }
+
+    .hint.is-hidden {
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+    }
+
+    .hint-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border-radius: 999px;
+      background: rgba(255, 247, 232, 0.11);
+      border: 1px solid rgba(255, 238, 208, 0.22);
+      backdrop-filter: blur(6px);
+    }
+
+    .hint-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #f2c57c;
+      box-shadow: 0 0 10px rgba(242, 197, 124, 0.85);
+      animation: pulseAnim 2.1s infinite ease-in-out;
+    }
+
+    @keyframes pulseAnim {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.35); opacity: 1; }
+    }
+
+    /* =========================================================================
+       ZARF VE MEKTUP KUTUSU
+       Not: 3D rotateX sırasında z-index çakışmalarını önlemek için kapak ve mektup
+       katmanları net z-index ve ayrı düzlemlerle yönetilir.
+       ========================================================================= */
+    .mail-workspace {
+      position: relative;
+      width: min(92vw, 520px);
+      /* Kapalıyken zarf yüksekliği; açıldığında yukarda çıkan mektuba yer açılır */
+      height: clamp(275px, 48vw, 340px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transition: height 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .mail-workspace.is-open {
+      height: clamp(560px, 98vw, 665px);
+    }
+
+    /* Zarfın masa üzerindeki gölgesi */
+    .desk-shadow {
+      position: absolute;
+      bottom: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 88%;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(10, 6, 3, 0.68) 0%, rgba(10, 6, 3, 0.22) 58%, transparent 80%);
+      filter: blur(8px);
+      pointer-events: none;
+      z-index: 0;
+      transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
+    }
+
+    .mail-workspace.is-open .desk-shadow {
+      transform: translateX(-50%) scale(1.04);
+      opacity: 0.8;
+    }
+
+    /* Tıklanabilir zarf gövdesi */
+    .envelope {
+      position: relative;
+      width: 100%;
+      height: clamp(235px, 41vw, 305px);
+      cursor: pointer;
+      outline: none;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .envelope:focus-visible {
+      border-radius: 10px;
+      box-shadow: 0 0 0 3px rgba(245, 206, 145, 0.8);
+    }
+
+    .mail-workspace:not(.is-open) .envelope:hover {
+      transform: translateY(-4px);
+    }
+
+    .mail-workspace.is-open .envelope {
+      cursor: default;
+      transform: translateY(16px);
+    }
+
+    /* 1) Zarf Arka Gövdesi (En alt katman) */
+    .env-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(120, 90, 54, 0.025) 0px,
+          rgba(120, 90, 54, 0.025) 2px,
+          transparent 2px,
+          transparent 5px
+        ),
+        linear-gradient(180deg, #d7c19b 0%, #c6ae84 100%);
+      border: 1px solid rgba(116, 87, 52, 0.36);
+      box-shadow:
+        inset 0 10px 20px rgba(42, 26, 10, 0.34),
+        0 16px 32px rgba(10, 6, 3, 0.52);
+      z-index: 1;
+    }
+
+    /* 2) Üst Kapak (Kapalıyken ön yüzde z-index: 4; açılınca geriye katlanıp z-index: 1'e iner) */
+    .env-flap-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 56%;
+      perspective: 1400px;
+      z-index: 4;
+      pointer-events: none;
+      transition: z-index 0s linear 0.28s;
+    }
+
+    .mail-workspace.is-open .env-flap-wrapper {
+      z-index: 1;
+      transition: z-index 0s linear 0.22s;
+    }
+
+    .env-flap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-origin: top center;
+      transform-style: preserve-3d;
+      transition: transform 0.68s cubic-bezier(0.25, 0.85, 0.3, 1);
+    }
+
+    /* Yukarı/geriye doğru açılan kapak */
+    .mail-workspace.is-open .env-flap {
+      transform: rotateX(176deg);
+    }
+
+    .flap-front-face,
+    .flap-back-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      clip-path: polygon(0 0, 100% 0, 50% 96%);
+    }
+
+    .flap-front-face {
+      background: linear-gradient(180deg, #e7d6b7 0%, #f5ebd5 68%, #ebd9b8 100%);
+      filter: drop-shadow(0 5px 7px rgba(42, 26, 10, 0.22));
+    }
+
+    .flap-back-face {
+      transform: rotateX(180deg);
+      background: linear-gradient(180deg, #c9b289 0%, #decba8 100%);
+      box-shadow: inset 0 -4px 10px rgba(42, 26, 10, 0.24);
+    }
+
+    /* Balmumu Mühür */
+    .wax-seal {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      transform: translate(-50%, -50%);
+      width: clamp(44px, 8vw, 54px);
+      height: clamp(44px, 8vw, 54px);
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 28%, #b33831 0%, var(--wax-red) 58%, var(--wax-dark) 100%);
+      box-shadow:
+        0 4px 10px rgba(32, 7, 5, 0.45),
+        inset 0 2px 3px rgba(255, 194, 184, 0.35),
+        inset 0 -3px 6px rgba(35, 5, 4, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.45s ease;
+    }
+
+    .wax-seal::before {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 215, 200, 0.36);
+    }
+
+    .wax-seal span {
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic;
+      font-weight: 600;
+      font-size: clamp(0.95rem, 2.3vw, 1.18rem);
+      color: rgba(255, 235, 226, 0.92);
+      text-shadow: 0 1px 2px rgba(30, 5, 4, 0.75);
+    }
+
+    .mail-workspace.is-open .wax-seal {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.75);
+    }
+
+    /* 3) Mektup Kağıdı (Kapalıyken zarf içinde z-index: 2; açılınca yukarı kayıp z-index: 5 ile ön cebin ve kapağın ÜSTÜNE çıkar) */
+    .letter-paper {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%) translateY(0) scale(0.95);
+      width: min(94%, 486px);
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(145, 120, 88, 0.028) 0px,
+          rgba(145, 120, 88, 0.028) 1px,
+          transparent 1px,
+          transparent 26px
+        ),
+        radial-gradient(circle at 50% 45%, var(--paper-light) 68%, var(--paper-warm) 100%);
+      border-radius: 6px;
+      padding: clamp(22px, 4.8vw, 34px) clamp(22px, 5vw, 38px) clamp(24px, 5vw, 36px);
+      border: 1px solid rgba(176, 154, 118, 0.48);
+      box-shadow:
+        0 8px 18px rgba(24, 15, 8, 0.2),
+        inset 0 0 24px rgba(186, 165, 130, 0.16);
+      z-index: 2;
+      opacity: 0.92;
+      pointer-events: none;
+      transition:
+        transform 0.88s cubic-bezier(0.2, 0.9, 0.25, 1),
+        box-shadow 0.88s cubic-bezier(0.2, 0.9, 0.25, 1),
+        opacity 0.45s ease,
+        z-index 0s linear 0.35s;
+    }
+
+    .mail-workspace.is-open .letter-paper {
+      z-index: 5;
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(calc(-1 * clamp(190px, 31vw, 242px))) scale(1);
+      box-shadow:
+        0 24px 48px rgba(12, 7, 4, 0.5),
+        0 6px 16px rgba(12, 7, 4, 0.24),
+        inset 0 0 28px rgba(186, 165, 130, 0.2);
+      transition:
+        transform 0.88s cubic-bezier(0.2, 0.9, 0.25, 1) 0.24s,
+        box-shadow 0.88s cubic-bezier(0.2, 0.9, 0.25, 1) 0.24s,
+        opacity 0.35s ease 0.12s,
+        z-index 0s linear 0.34s;
+    }
+
+    /* Mektup üst hitabı: Keskin, belirgin, mürekkep koyuluğunda ayrı el yazısı fontu */
+    .letter-salutation {
+      font-family: 'Caveat', cursive;
+      font-size: clamp(2.05rem, 5.2vw, 2.7rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--ink-deep);
+      margin-bottom: clamp(12px, 2.6vw, 18px);
+      letter-spacing: 0.015em;
+      transform: rotate(-0.4deg) translateZ(0);
+      transform-origin: left center;
+      text-shadow: 0 0.5px 0 rgba(18, 13, 10, 0.45);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    /* Mektup gövde metni: Net ve sıcak kırtasiye yazı tipi */
+    .letter-content {
+      font-family: 'Lora', Georgia, serif;
+      font-size: clamp(0.96rem, 2.2vw, 1.09rem);
+      line-height: 1.72;
+      color: var(--ink-primary);
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+
+    .letter-content p + p {
+      margin-top: clamp(12px, 2.5vw, 16px);
+    }
+
+    .letter-closing {
+      font-style: italic;
+      font-weight: 500;
+      color: #2c2019;
+    }
+
+    /* 4) Zarf Ön Cep Katmanları (Sol, Sağ, Alt) */
+    .env-pocket {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .pocket-left {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(125deg, #f5ebd6 0%, var(--env-warm) 100%);
+      clip-path: polygon(0 0, 54% 52%, 0 100%);
+      box-shadow: inset -2px 0 6px rgba(110, 82, 48, 0.14);
+    }
+
+    .pocket-right {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(235deg, #f1e6cf 0%, #e1d0b0 100%);
+      clip-path: polygon(100% 0, 46% 52%, 100% 100%);
+      box-shadow: inset 2px 0 6px rgba(110, 82, 48, 0.14);
+    }
+
+    .pocket-bottom {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          rgba(120, 92, 58, 0.02) 0px,
+          rgba(120, 92, 58, 0.02) 3px,
+          transparent 3px,
+          transparent 7px
+        ),
+        linear-gradient(180deg, #f7ede0 0%, var(--env-cream) 55%, var(--env-warm) 100%);
+      clip-path: polygon(0 100%, 50% 45%, 100% 100%);
+      border-bottom: 1px solid rgba(130, 100, 62, 0.3);
+    }
+
+    .pocket-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* Sağ üst köşe hatıra pulu */
+    .stamp {
+      position: absolute;
+      top: clamp(14px, 3vw, 20px);
+      right: clamp(14px, 3vw, 22px);
+      width: clamp(38px, 7vw, 48px);
+      height: clamp(46px, 8.5vw, 58px);
+      border: 1.5px dashed rgba(138, 98, 56, 0.45);
+      background: rgba(255, 250, 240, 0.56);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(4deg);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .stamp-frame {
+      width: 82%;
+      height: 82%;
+      border: 1px solid rgba(138, 98, 56, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Lora', Georgia, serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: rgba(118, 82, 44, 0.72);
+    }
+
+    /* Zarf ön yüzündeki el yazısı hitap */
+    .env-recipient {
+      position: absolute;
+      left: 50%;
+      bottom: clamp(20px, 5vw, 34px);
+      transform: translateX(-50%);
+      width: 86%;
+      text-align: center;
+      z-index: 4;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.5s ease;
+    }
+
+    .mail-workspace.is-open .env-recipient {
+      opacity: 0.15;
+      transform: translateX(-50%) translateY(8px);
+    }
+
+    .env-recipient-text {
+      font-family: 'Dancing Script', cursive;
+      font-weight: 700;
+      font-size: clamp(1.7rem, 4.8vw, 2.45rem);
+      line-height: 1.2;
+      color: #291d16;
+      letter-spacing: 0.01em;
+      display: inline-block;
+      padding: 3px 14px;
+      border-radius: 6px;
+      background: rgba(253, 247, 235, 0.58);
+      text-shadow: 0 1px 0 rgba(255, 252, 245, 0.75);
+    }
+
+    /* =========================================================================
+       ALT KONTROL BUTONU
+       ========================================================================= */
+    .controls {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .toggle-close-btn {
+      appearance: none;
+      border: 1px solid rgba(252, 238, 212, 0.35);
+      background: rgba(252, 244, 228, 0.15);
+      color: #fdf5e6;
+      font-family: 'Lora', Georgia, serif;
+      font-size: 0.92rem;
+      padding: 10px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.4s ease 0.4s, transform 0.4s ease 0.4s, background-color 0.2s ease;
+    }
+
+    .toggle-close-btn:hover {
+      background: rgba(252, 244, 228, 0.25);
+    }
+
+    .toggle-close-btn:focus-visible {
+      outline: 2px solid #f5ce91;
+      outline-offset: 2px;
+    }
+
+    .mail-workspace.is-open ~ .controls .toggle-close-btn {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    @media (max-width: 420px) {
+      .letter-paper {
+        padding: 20px 18px 24px;
+      }
+      .letter-content {
+        line-height: 1.68;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div id="hintBanner" class="hint" aria-live="polite">
+      <span class="hint-badge">
+        <span class="hint-pulse" aria-hidden="true"></span>
+        <span>Açmak için zarfa dokunun</span>
+      </span>
+    </div>
+
+    <section id="mailWorkspace" class="mail-workspace" aria-label="Sayın Mahmut Ünal için mektup zarfı">
+      <div class="desk-shadow" aria-hidden="true"></div>
+
+      <div
+        id="envelopeTrigger"
+        class="envelope"
+        role="button"
+        tabindex="0"
+        aria-expanded="false"
+        aria-label="Sayın Mahmut Ünal yazılı zarfı aç"
+      >
+        <!-- Zarf arka yüzü -->
+        <div class="env-back" aria-hidden="true"></div>
+
+        <!-- Zarf içinden çıkan mektup -->
+        <article id="letterPaper" class="letter-paper" aria-label="Mektup içeriği">
+          <div class="letter-salutation">Sayın Mahmut Ünal,</div>
+          <div class="letter-content">
+            <p>
+              Emekleriniz, sabrınız ve bize her zaman yol gösterdiğiniz için sonsuz teşekkürler.
+              Öğretmenimiz olmanız, sizden ders almak bizim için büyük bir şans.
+            </p>
+            <p class="letter-closing">Her şey için teşekkürler!</p>
+          </div>
+        </article>
+
+        <!-- Zarf ön cepleri -->
+        <div class="env-pocket" aria-hidden="true">
+          <div class="pocket-left"></div>
+          <div class="pocket-right"></div>
+          <div class="pocket-bottom"></div>
+
+          <svg class="pocket-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line x1="0" y1="0" x2="50" y2="52" stroke="rgba(115, 86, 50, 0.22)" stroke-width="0.45" />
+            <line x1="100" y1="0" x2="50" y2="52" stroke="rgba(115, 86, 50, 0.22)" stroke-width="0.45" />
+            <line x1="0" y1="100" x2="50" y2="45" stroke="rgba(255, 250, 240, 0.55)" stroke-width="0.4" />
+            <line x1="100" y1="100" x2="50" y2="45" stroke="rgba(255, 250, 240, 0.55)" stroke-width="0.4" />
+          </svg>
+        </div>
+
+        <!-- Hatıra pulu -->
+        <div class="stamp" aria-hidden="true">
+          <div class="stamp-frame">ÖZEL</div>
+        </div>
+
+        <!-- Zarf ön yüzündeki hitap -->
+        <div class="env-recipient">
+          <span class="env-recipient-text">Sayın Mahmut Ünal</span>
+        </div>
+
+        <!-- Üst kapak -->
+        <div class="env-flap-wrapper" aria-hidden="true">
+          <div class="env-flap">
+            <div class="flap-front-face"></div>
+            <div class="flap-back-face"></div>
+          </div>
+        </div>
+
+        <!-- Mühür -->
+        <div class="wax-seal" aria-hidden="true">
+          <span>MÜ</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <button id="closeBtn" type="button" class="toggle-close-btn">
+        Zarfı Kapat
+      </button>
+    </div>
+  </main>
+
+  <script>
+    /**
+     * Zarf açma/kapama etkileşimi.
+     * Tıklama, dokunma ve klavye (Enter / Space) ile sorunsuz çalışır.
+     */
+    (function () {
+      const workspace = document.getElementById("mailWorkspace");
+      const trigger = document.getElementById("envelopeTrigger");
+      const closeBtn = document.getElementById("closeBtn");
+      const hintBanner = document.getElementById("hintBanner");
+
+      let opened = false;
+
+      function setOpenState(nextOpen) {
+        opened = Boolean(nextOpen);
+        workspace.classList.toggle("is-open", opened);
+        trigger.setAttribute("aria-expanded", String(opened));
+        hintBanner.classList.toggle("is-hidden", opened);
+
+        trigger.setAttribute(
+          "aria-label",
+          opened ? "Sayın Mahmut Ünal için mektup açık" : "Sayın Mahmut Ünal yazılı zarfı aç"
+        );
+      }
+
+      trigger.addEventListener("click", function (event) {
+        if (event.target.closest("#letterPaper")) {
+          return;
+        }
+        if (!opened) {
+          setOpenState(true);
+        }
+      });
+
+      trigger.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (!opened) {
+            setOpenState(true);
+          }
+        }
+      });
+
+      closeBtn.addEventListener("click", function () {
+        setOpenState(false);
+        trigger.focus();
+      });
+    })();
+  </script>
+</body>
+</html>
